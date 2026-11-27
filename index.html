@@ -289,8 +289,8 @@ body{background:radial-gradient(1200px 600px at 100% -10%,#dff5e9 0%,rgba(223,24
 .done-head .chev.open{transform:rotate(180deg)}
 .done-list{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
 .done-list.open{grid-template-rows:1fr}
-.done-list>*{overflow:hidden}
-.done-list{overflow:hidden}
+.done-list>.done-inner{min-height:0;overflow:hidden}
+.done-list:not(.open)>.done-inner{visibility:hidden}
 .done-list .ent{padding:10px 4px}
 
 /* ---------- effects ---------- */

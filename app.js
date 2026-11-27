@@ -415,11 +415,11 @@ function renderDone() {
   if (!l.length) { el.innerHTML = '<div class="done-empty">ยังไม่มีการลงผลของวันนี้</div>'; return; }
   var tq = 0, ta = 0; l.forEach(function (e) { tq += e.qty; ta += e.amount; });
   el.innerHTML = '<button type="button" class="done-head" id="doneToggle"><span class="ok">✓</span><span><b>ลงผลไปแล้ว ' + l.length + ' รายการ</b><br><small>' + fmt(tq) + ' คน · ' + fmt(ta) + ' ฿</small></span><span class="chev' + (S.doneOpen ? ' open' : '') + '">▾</span></button>' +
-    '<div class="done-list' + (S.doneOpen ? ' open' : '') + '">' + l.map(function (e) {
+    '<div class="done-list' + (S.doneOpen ? ' open' : '') + '"><div class="done-inner">' + l.map(function (e) {
       return '<div class="ent"><div class="info">' + esc(e.item) + '<small>' + esc(e.user) + (e.time ? ' · ' + e.time : '') + (e.edited ? '<span class="edited"> · แก้ไขแล้ว</span>' : '') + '</small></div>' +
         '<div class="amt">' + fmt(e.qty) + '<small>' + fmt(e.amount) + ' ฿</small></div>' +
         (e.canEdit ? '<button type="button" data-eid="' + esc(e.id) + '">แก้ไข</button>' : '') + '</div>';
-    }).join('') + '</div>';
+    }).join('') + '</div></div>';
   $('doneToggle').onclick = function () { S.doneOpen = !S.doneOpen; renderDone(); };
 }
 $('eDone').addEventListener('click', function (e) {
