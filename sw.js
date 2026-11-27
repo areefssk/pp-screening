@@ -1,6 +1,6 @@
 /* Service worker: เก็บหน้าแอปไว้ในเครื่องให้เปิดเร็วและติดตั้งได้
    ข้อมูลจาก Google Sheet ไม่ถูกเก็บ (ดึงสดทุกครั้ง) */
-const CACHE = 'pp-screening-v6';
+const CACHE = 'pp-screening-v7';
 const SHELL = ['./', 'index.html', 'app.js', 'demo.js', 'config.js', 'manifest.webmanifest',
                'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 

@@ -43,8 +43,11 @@ function activeOn(it, date) { return it.enabled && (!it.from || date >= it.from)
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
 
 var DEMO = !window.PP_CONFIG || !PP_CONFIG.API_URL || /[?&]demo=1/.test(location.search);
+var pending = 0;
+function busy(d) { pending = Math.max(0, pending + d); document.body.classList.toggle('busy', pending > 0); }
 function call(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
+  busy(1);
   var p = DEMO
     ? PPDemo.call(fn, args)
     : fetch(PP_CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
@@ -55,7 +58,7 @@ function call(fn) {
     if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = 'ไม่มีอินเทอร์เน็ต หรือเชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
     if (msg.indexOf('SESSION_EXPIRED') >= 0) { setUser(null); openLogin(); msg = msg.replace('SESSION_EXPIRED: ', ''); }
     throw new Error(msg);
-  });
+  }).finally(function () { busy(-1); });
 }
 var tT;
 function toast(msg, isErr, action) {
@@ -120,6 +123,7 @@ function closeModal() { $('modal').classList.add('hide'); }
 $('modal').addEventListener('click', function (e) { if (e.target.id === 'modal' || e.target.closest('[data-close]')) closeModal(); });
 
 function openLogin(after) {
+  if (!S.init) { toast('กำลังโหลด กรุณารอสักครู่'); return; }
   var last = store('ppLastName') || '';
   openModal('<h2>เข้าสู่ระบบ</h2><p>สำหรับเจ้าหน้าที่ที่ลงผลและแก้ไขข้อมูล</p>' +
     '<label class="f">ชื่อผู้ใช้<select id="lgName"><option value="">— เลือกชื่อ —</option>' +
@@ -178,7 +182,12 @@ function doLogout() {
 /* ================= data ================= */
 function loadYear(fy, force) {
   if (!force && S.data[fy]) return Promise.resolve(S.data[fy]);
-  return call('getYearData', fy).then(function (d) { S.data[fy] = d; return d; })
+  if (!force && S.page === 'dash') dashSkeleton();
+  return call('getYearData', fy).then(function (d) {
+    S.data[fy] = d;
+    if (S.init && fy === fyOf(S.init.today) && !DEMO) { try { store('ppYear', JSON.stringify(d)); } catch (e) {} }
+    return d;
+  })
     .catch(function (e) { toast(e.message, true); throw e; });
 }
 function loadDay(date) {
@@ -559,21 +568,65 @@ $('rCsv').addEventListener('click', function () {
 });
 
 /* ================= start ================= */
-call('getInit').then(function (init) {
+function dashSkeleton() {
+  var sk = function (h, w) { return '<div class="skel" style="height:' + h + 'px;width:' + (w || 100) + '%;margin:8px 0"></div>'; };
+  $('dKpis').innerHTML = [1, 2, 3, 4].map(function () { return '<div class="kpi skel-kpi"><div class="skel" style="height:14px;width:55%"></div><div class="skel" style="height:30px;width:80%;margin:12px 0 8px"></div><div class="skel" style="height:12px;width:45%"></div></div>'; }).join('');
+  $('cMain').innerHTML = '<div class="skel-bars">' + [40, 65, 50, 80, 35, 70, 55, 90, 45, 60, 30, 75].map(function (h, i) { return '<i style="height:' + h + '%;animation-delay:' + (i * 0.06) + 's"></i>'; }).join('') + '</div>';
+  $('cItems').innerHTML = [90, 70, 55, 40, 30].map(function (w) { return sk(14, w); }).join('');
+  $('cGroups').innerHTML = [85, 60, 40, 25].map(function (w) { return sk(14, w); }).join('');
+}
+function localToday() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function applyInit(init) {
   S.init = init;
-  if (!DEMO && init.apiVersion !== APP_API_VERSION) toast('หลังบ้าน (Apps Script) เป็นเวอร์ชัน ' + init.apiVersion + ' แต่หน้าเว็บต้องการ ' + APP_API_VERSION + ' — กรุณา Deploy เวอร์ชันใหม่', true);
   if (init.settings && init.settings.org) $('orgName').textContent = init.settings.org;
-  S.fy = fyOf(init.today);
+  if (!S.fy) S.fy = fyOf(init.today);
   var yopt = init.fys.map(function (y) { return '<option value="' + y + '">ปีงบ ' + y + '</option>'; }).join('');
-  $('dYear').innerHTML = yopt; $('rYear').innerHTML = yopt; $('dYear').value = S.fy; $('rYear').value = S.fy;
+  var rv = $('rYear').value;
+  $('dYear').innerHTML = yopt; $('rYear').innerHTML = yopt; $('dYear').value = S.fy; $('rYear').value = rv || S.fy;
   fillMonthSelect();
-  $('eDate').value = init.today; $('eDate').max = init.today;
-  $('lDate').value = init.today; $('lDate').max = init.today;
-  dayLabel('eDay', init.today); dayLabel('lDay', init.today); $('eNext').disabled = true; $('eToday').classList.add('hide');
-  try { var u = JSON.parse(store('ppUser') || 'null'); if (u && u.token) S.user = u; } catch (e) {}
+  if (!$('eDate').value) {
+    $('eDate').value = init.today; $('lDate').value = init.today;
+    dayLabel('eDay', init.today); dayLabel('lDay', init.today); $('eNext').disabled = true; $('eToday').classList.add('hide');
+  }
+  $('eDate').max = init.today; $('lDate').max = init.today;
+}
+var booted = false;
+function startApp() {
+  if (booted) return; booted = true;
   if (DEMO) $('demoBar').classList.remove('hide');
   go('dash');
-}).catch(function (e) { $('dUpdated').textContent = e.message; toast(e.message, true); });
+}
+// เปิดแอปทันทีด้วยข้อมูลล่าสุดที่เก็บไว้ในเครื่อง แล้วค่อยอัปเดตจากเซิร์ฟเวอร์
+try { var u0 = JSON.parse(store('ppUser') || 'null'); if (u0 && u0.token) S.user = u0; } catch (e) {}
+renderNav();
+dashSkeleton();
+if (!DEMO) {
+  try {
+    var ci = JSON.parse(store('ppInit') || 'null'), cy = JSON.parse(store('ppYear') || 'null');
+    if (ci && ci.apiVersion === APP_API_VERSION) {
+      ci.today = localToday();
+      applyInit(ci);
+      if (cy && cy.fy === S.fy) { S.data[cy.fy] = cy; }
+      startApp();
+      $('dUpdated').textContent = 'กำลังอัปเดตข้อมูลล่าสุด…';
+    }
+  } catch (e) {}
+}
+var slowT = setTimeout(function () {
+  if (!S.init) $('dUpdated').innerHTML = '<span class="wake">กำลังเชื่อมต่อ… ครั้งแรกอาจใช้ 5–15 วินาที</span>';
+}, 4000);
+call('getInit').then(function (init) {
+  clearTimeout(slowT);
+  if (!DEMO && init.apiVersion !== APP_API_VERSION) toast('หลังบ้าน (Apps Script) เป็นเวอร์ชัน ' + init.apiVersion + ' แต่หน้าเว็บต้องการ ' + APP_API_VERSION + ' — กรุณา Deploy เวอร์ชันใหม่', true);
+  if (!DEMO) { try { store('ppInit', JSON.stringify(init)); } catch (e) {} }
+  var wasBooted = booted;
+  applyInit(init);
+  if (!wasBooted) { startApp(); return; }
+  loadYear(S.fy, true).then(function () {
+    if (S.page === 'dash') renderDash();
+    if (S.page === 'report' && Number($('rYear').value) === S.fy) renderReport();
+  }).catch(function () {});
+}).catch(function (e) { clearTimeout(slowT); $('dUpdated').textContent = e.message; toast(e.message, true); });
 
 /* ================= PWA: ติดตั้ง + อัปเดต ================= */
 if ('serviceWorker' in navigator) window.addEventListener('load', function () {
