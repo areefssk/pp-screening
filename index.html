@@ -268,6 +268,79 @@ body{background:radial-gradient(1200px 600px at 100% -10%,#dff5e9 0%,rgba(223,24
   .rep td:first-child,.rep th:first-child{position:static}
   @page{size:A4 landscape;margin:10mm}
 }
+.backbtn{margin-left:auto;border:1px solid var(--bd);background:#fff;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--bar);cursor:pointer;box-shadow:0 2px 6px rgba(15,61,46,.08)}
+
+/* ---------- date bar + done panel ---------- */
+.datecard .f{font-size:12.5px;color:var(--mu);margin-bottom:6px}
+.datebar{display:flex;gap:8px;align-items:center}
+.datebar input{flex:1;min-width:0;padding:10px;border:1px solid var(--bd);border-radius:12px;font-size:15px;background:#fff}
+.datebar button:not(.btn){width:44px;height:44px;flex-shrink:0;border-radius:12px;border:1px solid var(--bd);background:#fff;font-size:20px;color:var(--bar);cursor:pointer;position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(15,61,46,.08)}
+.datebar button:disabled{opacity:.35}
+.datebar .btn{padding:10px 14px;white-space:nowrap}
+.daylbl{margin-top:8px;font-size:14px;font-weight:600}
+.daylbl .rel{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:999px;background:#fff1dc;color:#9a5b00;font-size:12px;font-weight:700}
+.daylbl .rel.now{background:#e2f6ea;color:#13784a}
+.done{margin-top:12px}
+.done-empty{font-size:13px;color:var(--mu);padding:10px 12px;border:1px dashed var(--bd);border-radius:12px}
+.done-head{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:0;cursor:pointer;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,#e7f7ee,#f6fbf8)}
+.done-head small{color:var(--mu)}
+.done-head .ok{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#34d07f,#138a55);color:#fff;font-weight:800;box-shadow:0 4px 10px rgba(19,138,85,.35)}
+.done-head .chev{margin-left:auto;transition:transform .25s;color:var(--bar)}
+.done-head .chev.open{transform:rotate(180deg)}
+.done-list{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.done-list.open{grid-template-rows:1fr}
+.done-list>*{overflow:hidden}
+.done-list{overflow:hidden}
+.done-list .ent{padding:10px 4px}
+
+/* ---------- effects ---------- */
+section.enter{animation:pageIn .38s cubic-bezier(.2,.8,.2,1) both}
+section.enter .card,section.enter .kpi,section.enter .grp,section.enter .tblwrap{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+section.enter .kpi:nth-child(2){animation-delay:.05s}section.enter .kpi:nth-child(3){animation-delay:.1s}section.enter .kpi:nth-child(4){animation-delay:.15s}
+section.enter .card:nth-of-type(2),section.enter .grp:nth-of-type(2){animation-delay:.08s}
+section.enter .card:nth-of-type(3),section.enter .grp:nth-of-type(3){animation-delay:.14s}
+section.enter .grp:nth-of-type(n+4){animation-delay:.2s}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+.btn,.chip,.step button,.tabbar button,.nav button,.daynav button{position:relative;overflow:hidden;transition:transform .12s,box-shadow .2s,background .2s}
+.btn:active,.chip:active,.step button:active,.datebar button:active{transform:scale(.95)}
+.btn:hover{filter:brightness(1.05)}
+.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+.kpi .kic{animation:float 4s ease-in-out infinite}
+.kpi:nth-child(2) .kic{animation-delay:-1s}.kpi:nth-child(3) .kic{animation-delay:-2s}.kpi:nth-child(4) .kic{animation-delay:-3s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.kpi::before{animation:drift 9s ease-in-out infinite}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(-14px,10px)}}
+.kpi b::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:shine 1.4s .5s ease-out}
+.kpi b{position:relative;overflow:hidden}
+@keyframes shine{to{transform:translateX(120%)}}
+.it{transition:background .25s}
+.it.has .step input{border-color:#34d07f;box-shadow:0 0 0 3px rgba(52,208,127,.18);animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.08)}}
+.tabbar .fab span.c{animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 10px 20px -4px rgba(19,138,85,.6),0 0 0 5px #fff}50%{box-shadow:0 10px 26px -2px rgba(19,138,85,.8),0 0 0 5px #fff,0 0 0 10px rgba(52,208,127,.15)}}
+.ov:not(.hide){animation:fadeIn .2s ease both}
+.ov:not(.hide) .modal{animation:modalIn .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+#toast{animation:toastIn .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+.mtop::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.08) 50%,transparent 60%);background-size:250% 100%;animation:sheen 6s linear infinite;pointer-events:none}
+@keyframes sheen{from{background-position:150% 0}to{background-position:-100% 0}}
+.celebrate{position:fixed;inset:0;display:grid;place-items:center;z-index:40;pointer-events:none}
+.celebrate svg{width:96px;height:96px;filter:drop-shadow(0 10px 24px rgba(19,138,85,.45));animation:popIn .5s cubic-bezier(.2,1.4,.4,1) both, fadeOut .3s 1s forwards}
+.celebrate circle{fill:#1fae6a}
+.celebrate path{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .4s .25s forwards}
+.celebrate .burst{position:absolute;width:96px;height:96px;border-radius:50%;border:3px solid #34d07f;animation:burst .7s .1s ease-out both}
+@keyframes popIn{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes burst{from{transform:scale(.8);opacity:.9}to{transform:scale(2.4);opacity:0}}
+@keyframes fadeOut{to{opacity:0;transform:scale(.9)}}
+.skel{background:linear-gradient(90deg,#edf3ef 25%,#f7faf8 50%,#edf3ef 75%);background-size:200% 100%;animation:skel 1.2s infinite;border-radius:10px}
+@keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:899px){.datebar .btn{padding:10px}}
 </style>
 </head>
 <body>
@@ -309,9 +382,16 @@ body{background:radial-gradient(1200px 600px at 100% -10%,#dff5e9 0%,rgba(223,24
   <!-- ลงผล -->
   <section id="p-entry" class="hide">
     <div class="ph"><div><h1>ลงผลคัดกรอง</h1><p>กรอกจำนวนคน ระบบคิดเงินให้เอง</p></div></div>
-    <div class="card entryhead">
-      <label class="f">วันที่ให้บริการ<input type="date" id="eDate"></label>
-      <button class="btn ghost" id="eToday" type="button">วันนี้</button>
+    <div class="card datecard">
+      <div class="f">วันที่ให้บริการ</div>
+      <div class="datebar">
+        <button type="button" id="ePrev" aria-label="วันก่อนหน้า">‹</button>
+        <input type="date" id="eDate">
+        <button type="button" id="eNext" aria-label="วันถัดไป">›</button>
+        <button type="button" class="btn ghost" id="eToday">กลับวันนี้</button>
+      </div>
+      <div class="daylbl" id="eDay"></div>
+      <div class="done" id="eDone"></div>
     </div>
     <div class="chips" id="eGroups"></div>
     <div id="eRule" class="banner demo hide"></div>
@@ -329,6 +409,7 @@ body{background:radial-gradient(1200px 600px at 100% -10%,#dff5e9 0%,rgba(223,24
       <div><h1>บันทึกรายวัน</h1><p>ดู แก้ไข หรือยกเลิกรายการที่ลงไปแล้ว (ต้องใส่เหตุผล)</p></div>
       <div class="daynav"><button type="button" id="lPrev">‹</button><input type="date" id="lDate"><button type="button" id="lNext">›</button></div>
     </div>
+    <div class="daylbl" id="lDay" style="margin:-6px 0 12px"></div>
     <div class="card"><div id="lList" class="empty">—</div></div>
   </section>
 

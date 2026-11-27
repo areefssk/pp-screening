@@ -91,6 +91,7 @@ function go(page) {
   if (p.locked && !S.user) { openLogin(function () { go(page); }); return; }
   S.page = page;
   PAGES.forEach(function (x) { $('p-' + x.id).classList.toggle('hide', x.id !== page); });
+  var sec = $('p-' + page); sec.classList.remove('enter'); void sec.offsetWidth; sec.classList.add('enter');
   $('mTitle').textContent = p.label;
   renderNav();
   window.scrollTo(0, 0);
@@ -266,7 +267,8 @@ function renderDash() {
     });
   } else {
     var y = Number(S.month.slice(0, 4)), mi = Number(S.month.slice(5, 7)) - 1, nd = new Date(y, mi + 1, 0).getDate();
-    $('cTitle').textContent = 'ยอดเงินรายวัน · ' + scope; $('cSub').textContent = 'บาท · แตะแท่งเพื่อดูตัวเลข';
+    $('cTitle').innerHTML = 'ยอดเงินรายวัน · ' + esc(scope) + ' <button type="button" class="backbtn" id="backMonth">← กลับไปดูรายเดือน</button>';
+    $('cSub').textContent = 'บาท · แตะแท่งเพื่อดูตัวเลข';
     cols = [];
     for (var dd = 1; dd <= nd; dd++) {
       var k2 = S.month + '-' + pad(dd), q2 = 0, a2 = 0;
@@ -275,6 +277,7 @@ function renderDash() {
     }
   }
   colChart($('cMain'), cols, !S.month);
+  if ($('backMonth')) $('backMonth').onclick = function () { S.month = ''; $('dMonth').value = ''; renderDash(); };
 
   var list = Object.keys(byItem).map(function (c) { var it = items[c] || {}; return { name: it.name || c, g: it.group || 'อื่น ๆ', q: byItem[c].q, a: byItem[c].a }; })
     .sort(function (a, b) { return b.a - a.a; });
@@ -349,6 +352,7 @@ function renderEntry() {
   var items = entryItems(), groups = groupsOf(items);
   if (S.eGroup !== 'ทั้งหมด' && groups.indexOf(S.eGroup) < 0) S.eGroup = 'ทั้งหมด';
   var done = {}; S.dayEntries.forEach(function (e) { done[e.code] = (done[e.code] || 0) + e.qty; });
+  renderDone();
   $('eGroups').innerHTML = ['ทั้งหมด'].concat(groups).map(function (g) {
     return '<button type="button" class="chip' + (S.eGroup === g ? ' on' : '') + '" data-g="' + esc(g) + '">' + (g === 'ทั้งหมด' ? '' : '<i class="dot" style="background:' + gColor(g) + '"></i>') + esc(g) + '</button>';
   }).join('');
@@ -386,8 +390,43 @@ $('eItems').addEventListener('click', function (e) {
 });
 $('eItems').addEventListener('input', recalc);
 $('eGroups').addEventListener('click', function (e) { var c = e.target.closest('[data-g]'); if (c) { recalc(); S.eGroup = c.dataset.g; renderEntry(); } });
-$('eDate').addEventListener('change', function () { recalc(); loadDay(this.value).then(renderEntry); });
-$('eToday').addEventListener('click', function () { $('eDate').value = S.init.today; loadDay(S.init.today).then(renderEntry); });
+var DOW = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+function dayLabel(id, d) {
+  var t = S.init.today, diff = daysBetween(d, t);
+  var rel = diff === 0 ? 'วันนี้' : diff === 1 ? 'เมื่อวาน' : diff + ' วันก่อน';
+  $(id).innerHTML = 'วัน' + DOW[new Date(d + 'T00:00:00').getDay()] + 'ที่ ' + thDate(d, true) + ' <span class="rel' + (diff ? '' : ' now') + '">' + rel + '</span>';
+}
+function setEntryDate(d) {
+  if (!d || d > S.init.today) return;
+  recalc();
+  $('eDate').value = d; dayLabel('eDay', d);
+  $('eNext').disabled = d >= S.init.today;
+  $('eToday').classList.toggle('hide', d === S.init.today);
+  S.doneOpen = false;
+  $('eDone').innerHTML = '<div class="skel" style="height:52px"></div>';
+  loadDay(d).then(renderEntry);
+}
+$('eDate').addEventListener('change', function () { setEntryDate(this.value); });
+$('ePrev').addEventListener('click', function () { setEntryDate(addDays($('eDate').value, -1)); });
+$('eNext').addEventListener('click', function () { setEntryDate(addDays($('eDate').value, 1)); });
+$('eToday').addEventListener('click', function () { setEntryDate(S.init.today); });
+function renderDone() {
+  var l = S.dayEntries, el = $('eDone');
+  if (!l.length) { el.innerHTML = '<div class="done-empty">ยังไม่มีการลงผลของวันนี้</div>'; return; }
+  var tq = 0, ta = 0; l.forEach(function (e) { tq += e.qty; ta += e.amount; });
+  el.innerHTML = '<button type="button" class="done-head" id="doneToggle"><span class="ok">✓</span><span><b>ลงผลไปแล้ว ' + l.length + ' รายการ</b><br><small>' + fmt(tq) + ' คน · ' + fmt(ta) + ' ฿</small></span><span class="chev' + (S.doneOpen ? ' open' : '') + '">▾</span></button>' +
+    '<div class="done-list' + (S.doneOpen ? ' open' : '') + '">' + l.map(function (e) {
+      return '<div class="ent"><div class="info">' + esc(e.item) + '<small>' + esc(e.user) + (e.time ? ' · ' + e.time : '') + (e.edited ? '<span class="edited"> · แก้ไขแล้ว</span>' : '') + '</small></div>' +
+        '<div class="amt">' + fmt(e.qty) + '<small>' + fmt(e.amount) + ' ฿</small></div>' +
+        (e.canEdit ? '<button type="button" data-eid="' + esc(e.id) + '">แก้ไข</button>' : '') + '</div>';
+    }).join('') + '</div>';
+  $('doneToggle').onclick = function () { S.doneOpen = !S.doneOpen; renderDone(); };
+}
+$('eDone').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-eid]'); if (!b) return;
+  var en = S.dayEntries.find(function (x) { return x.id === b.dataset.eid; });
+  openEditEntry(en, $('eDate').value, function () { renderEntry(); });
+});
 $('eSave').addEventListener('click', function () {
   recalc();
   var date = $('eDate').value, st = S.init.settings;
@@ -411,7 +450,7 @@ $('eSave').addEventListener('click', function () {
       .then(function (r) {
         closeModal(); S.hidden = {}; $('eNote').value = '';
         var fy = fyOf(date); delete S.data[fy];
-        loadDay(date).then(renderEntry);
+        S.doneOpen = true; loadDay(date).then(renderEntry); celebrate();
         toast('บันทึกแล้ว ' + fmt(r.people) + ' คน · ' + fmt(r.total) + ' ฿', false, { label: 'ดูภาพรวม', fn: function () { S.fy = fy; $('dYear').value = fy; S.month = date.slice(0, 7); fillMonthSelect(); go('dash'); } });
       })
       .catch(function (e) { $('cfErr').textContent = e.message; btn.disabled = false; btn.textContent = 'ลองบันทึกอีกครั้ง'; });
@@ -432,10 +471,9 @@ function renderLog() {
       (e.canEdit ? '<button type="button" data-id="' + esc(e.id) + '">แก้ไข</button>' : '') + '</div>';
   }).join('') + '<div class="sumline"><span>รวมวันนี้</span><span>' + fmt(tq) + ' คน · ' + fmt(ta) + ' ฿</span></div>';
 }
-$('lList').addEventListener('click', function (e) {
-  var b = e.target.closest('button[data-id]'); if (!b) return;
-  var en = S.dayEntries.find(function (x) { return x.id === b.dataset.id; });
-  openModal('<h2>แก้ไขรายการ</h2><p>' + esc(en.item) + ' · ' + thDate($('lDate').value, true) + ' · ลงโดย ' + esc(en.user) + '</p>' +
+/** หน้าต่างแก้ไข/ยกเลิก ใช้ร่วมกันทั้งหน้าลงผลและหน้าบันทึกรายวัน */
+function openEditEntry(en, date, onDone) {
+  openModal('<h2>แก้ไขรายการ</h2><p>' + esc(en.item) + ' · ' + thDate(date, true) + ' · ลงโดย ' + esc(en.user) + '</p>' +
     '<label class="f">จำนวนคน<div class="step" style="margin-top:6px"><button type="button" id="edM">−</button><input type="number" min="0" inputmode="numeric" id="edQ" value="' + en.qty + '" style="flex:1;width:auto"><button type="button" id="edP">+</button></div></label>' +
     '<p id="edAmt" style="margin:0 0 10px">' + fmt(en.amount) + ' ฿</p>' +
     '<label class="f">เหตุผล (จำเป็น)<input id="edWhy" maxlength="200" placeholder="เช่น นับผิด, ลงซ้ำ, ผิดรายการ"></label>' +
@@ -450,14 +488,19 @@ $('lList').addEventListener('click', function (e) {
     if (why.length < 3) { $('edErr').textContent = 'กรุณาใส่เหตุผล'; $('edWhy').focus(); return; }
     $('edGo').disabled = $('edDel').disabled = true;
     call('updateEntry', S.user.token, en.id, q, why).then(function () {
-      closeModal(); toast(msg); delete S.data[fyOf($('lDate').value)];
-      loadDay($('lDate').value).then(renderLog);
+      closeModal(); toast(msg); delete S.data[fyOf(date)];
+      loadDay(date).then(onDone);
     }).catch(function (er) { $('edErr').textContent = er.message; $('edGo').disabled = $('edDel').disabled = false; });
   };
   $('edGo').onclick = function () { var q = parseInt($('edQ').value, 10) || 0; if (q === en.qty) { closeModal(); return; } send(q, q ? 'แก้ไขแล้ว' : 'ยกเลิกรายการแล้ว'); };
   $('edDel').onclick = function () { if (this.dataset.sure) send(0, 'ยกเลิกรายการแล้ว'); else { this.dataset.sure = 1; this.textContent = 'กดอีกครั้งเพื่อยืนยัน'; } };
+}
+$('lList').addEventListener('click', function (e) {
+  var b = e.target.closest('button[data-id]'); if (!b) return;
+  var en = S.dayEntries.find(function (x) { return x.id === b.dataset.id; });
+  openEditEntry(en, $('lDate').value, renderLog);
 });
-function setLogDate(d) { if (d > S.init.today) return; $('lDate').value = d; loadDay(d).then(renderLog); }
+function setLogDate(d) { if (d > S.init.today) return; $('lDate').value = d; dayLabel('lDay', d); loadDay(d).then(renderLog); }
 $('lDate').addEventListener('change', function () { setLogDate(this.value); });
 $('lPrev').addEventListener('click', function () { setLogDate(addDays($('lDate').value, -1)); });
 $('lNext').addEventListener('click', function () { setLogDate(addDays($('lDate').value, 1)); });
@@ -526,6 +569,7 @@ call('getInit').then(function (init) {
   fillMonthSelect();
   $('eDate').value = init.today; $('eDate').max = init.today;
   $('lDate').value = init.today; $('lDate').max = init.today;
+  dayLabel('eDay', init.today); dayLabel('lDay', init.today); $('eNext').disabled = true; $('eToday').classList.add('hide');
   try { var u = JSON.parse(store('ppUser') || 'null'); if (u && u.token) S.user = u; } catch (e) {}
   if (DEMO) $('demoBar').classList.remove('hide');
   go('dash');
@@ -559,3 +603,21 @@ $('installGo').addEventListener('click', function () {
 });
 $('installNo').addEventListener('click', function () { store('ppNoInstall', '1'); $('installBar').classList.add('hide'); });
 setTimeout(showInstall, 1500);
+
+/* ================= effects ================= */
+// ระลอกน้ำเมื่อกดปุ่ม
+document.addEventListener('pointerdown', function (e) {
+  var b = e.target.closest('.btn, .chip, .step button, .tabbar button, .nav button, .daynav button, .datebar button');
+  if (!b || b.disabled || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 1.6, s = document.createElement('span');
+  s.className = 'ripple'; s.style.width = s.style.height = d + 'px';
+  s.style.left = (e.clientX - r.left - d / 2) + 'px'; s.style.top = (e.clientY - r.top - d / 2) + 'px';
+  b.appendChild(s); setTimeout(function () { s.remove(); }, 600);
+});
+// เครื่องหมายถูกเด้งเมื่อบันทึกสำเร็จ
+function celebrate() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var o = document.createElement('div'); o.className = 'celebrate';
+  o.innerHTML = '<div class="burst"></div><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M14 27l8 8 16-17"/></svg>';
+  document.body.appendChild(o); setTimeout(function () { o.remove(); }, 1300);
+}
