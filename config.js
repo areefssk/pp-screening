@@ -1,9 +1,6 @@
-/* ตั้งค่าแอป
- * API_URL = ลิงก์ Web App ของ Apps Script (ลงท้ายด้วย /exec)
- * ถ้ายังเว้นว่าง แอปจะเปิดเป็น "โหมดตัวอย่าง" ด้วยข้อมูลสมมติ
- */
+/* ตั้งค่าแอป */
 window.PP_CONFIG = {
-  API_URL: '',
+  API_URL: 'https://script.google.com/macros/s/AKfycbwhlRi4SL2SbqwKT8TiM4djGbsb2l5wjIwZVHuicCJAY4fjcQL-HJpspcnrL7wNTTPJ/exec',
   APP_NAME: 'PP Screening',
   ORG_NAME: 'สรุปผลงาน PP Fee Schedule'
 };
