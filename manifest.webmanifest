@@ -1,0 +1,17 @@
+{
+  "name": "PP Screening · สรุปผลงานคัดกรอง",
+  "short_name": "PP Screening",
+  "description": "บันทึกและสรุปผลงานคัดกรอง PP Fee Schedule",
+  "lang": "th",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f6f4",
+  "theme_color": "#0f3d2e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
